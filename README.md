@@ -34,6 +34,17 @@ dependencies {
 
 Add a required `terralib` dependency to the consuming mod's `neoforge.mods.toml` as well.
 
+## Releases
+
+Push a SemVer tag beginning with `v` to build, test, and publish a GitHub Release containing the TerraLib JAR. The version in the JAR filename and mod metadata is taken from the tag, so `v1.2.3` produces `terralib-1.2.3.jar`.
+
+```powershell
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+The release workflow uses GitHub's built-in token, so no repository secret is required. The tag must point to the commit you want to release.
+
 ## Example
 
 ```java
