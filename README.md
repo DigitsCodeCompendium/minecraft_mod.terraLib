@@ -1,25 +1,46 @@
+# TerraLib
 
-Installation information
-=======
+Shared NeoForge 1.21.1 library for the Terra Minecraft mods.
 
-This template repository can be directly cloned to get you started with a new
-mod. Simply create a new repository cloned from this one, by following the
-instructions provided by [GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template).
+## Included APIs
 
-Once you have your clone, simply open the repository in the IDE of your choice. The usual recommendation for an IDE is either IntelliJ IDEA or Eclipse.
+- `TerraGui`: texture-free machine panels, vanilla-style raised panels, recessed and instrument inset panels, slots and slot grids, accent plaques, status indicators, progress bars, perimeter progress, circles, pie charts, and badges.
+- `TerraUiTheme`: reusable ARGB palettes with built-in `MACHINE` and `VANILLA` themes.
+- `ProgressChartHud` and `HudAnchor`: reusable progress/chart HUD layout and positioning.
+- `TerraColors`: strict `#RRGGBB` parsing/formatting and alpha composition.
+- `TerraFormats`: locale-stable scaled numbers, tick durations, and human-readable identifiers.
 
-If at any point you are missing libraries in your IDE, or you've run into problems you can
-run `gradlew --refresh-dependencies` to refresh the local cache. `gradlew clean` to reset everything 
-{this does not affect your code} and then start the process again.
+Client-only rendering APIs live under `com.digitscodecompendium.terralib.client`; common utilities live under `com.digitscodecompendium.terralib.util` and are safe to use on either side.
 
-Mapping Names:
-============
-By default, the MDK is configured to use the official mapping names from Mojang for methods and fields 
-in the Minecraft codebase. These names are covered by a specific license. All modders should be aware of this
-license. For the latest license text, refer to the mapping file itself, or the reference copy here:
-https://github.com/NeoForged/NeoForm/blob/main/Mojang.md
+## Local development dependency
 
-Additional Resources: 
-==========
-Community Documentation: https://docs.neoforged.net/  
-NeoForged Discord: https://discord.neoforged.net/
+Publish TerraLib to its local repository:
+
+```powershell
+.\gradlew.bat publish
+```
+
+Then add the repository and dependency to a consuming mod:
+
+```groovy
+repositories {
+    maven { url = uri('../minecraft_mod.terraLib/repo') }
+}
+
+dependencies {
+    implementation 'com.digitscodecompendium.terralib:terralib:0.1.0'
+}
+```
+
+Add a required `terralib` dependency to the consuming mod's `neoforge.mods.toml` as well.
+
+## Example
+
+```java
+TerraGui.machinePanel(graphics, leftPos, topPos, imageWidth, imageHeight);
+TerraGui.recessedPanel(graphics, leftPos + 12, topPos + 31, 152, 98);
+TerraGui.slotGrid(graphics, leftPos + 7, topPos + 139, 9, 3);
+TerraGui.progressBar(graphics, x, y, 132, 8, progress, 10);
+```
+
+All render methods use GUI coordinates and accept a custom `TerraUiTheme` where styling needs to differ.
