@@ -5,6 +5,8 @@ Shared NeoForge 1.21.1 library for the Terra Minecraft mods.
 ## Included APIs
 
 - `TerraGui`: texture-free machine panels, vanilla-style raised panels, recessed and instrument inset panels, slots and slot grids, accent plaques, status indicators, progress bars, perimeter progress, circles, pie charts, and badges.
+- `TerraMenu`: tabbed panels with tabs on any side, tab hit-testing, scroll panels, and vertical or horizontal scrollbars.
+- `TerraButton`: themed, narratable buttons using text, GUI sprite icons, items, blocks, or mixed text-and-graphic content.
 - `TerraUiTheme`: reusable ARGB palettes with built-in `MACHINE` and `VANILLA` themes.
 - `SharedHudPanel`: a single bottom-right HUD panel with ordered, independently visible contributions from multiple mods.
 - `HudPanelConfig` and `HudPanelPlacement`: standard enabled, scale, position, and anchor controls for TerraLib HUD panels.
@@ -57,6 +59,50 @@ TerraGui.progressBar(graphics, x, y, 132, 8, progress, 10);
 ```
 
 All render methods use GUI coordinates and accept a custom `TerraUiTheme` where styling needs to differ.
+
+## Tabbed and scrolling menus
+
+`TerraMenu.tabbedPanel` accepts `TOP`, `BOTTOM`, `LEFT`, or `RIGHT`; left/right tabs are vertical and top/bottom tabs
+are horizontal. The returned layout provides content bounds and `tabAt(mouseX, mouseY)` for click handling.
+
+```java
+TerraMenu.TabbedPanelLayout menu = TerraMenu.tabbedPanel(
+        graphics, font, left, top, 176, 166,
+        List.of(Component.literal("Overview"), Component.literal("Members")),
+        selectedTab, TerraMenu.TabSide.LEFT, TerraUiTheme.VANILLA, panelConfig.opacity());
+
+TerraMenu.ScrollPanelLayout scroll = TerraMenu.scrollPanel(
+        graphics, menu.content().x(), menu.content().y(),
+        menu.content().width(), menu.content().height(),
+        contentHeight, scrollOffset, TerraMenu.ScrollAxis.VERTICAL,
+        TerraUiTheme.VANILLA, panelConfig.opacity());
+```
+
+Use `scroll.viewport()` as the scissor bounds while drawing content. `scroll.scrollBar()` exposes the track, thumb,
+clamped offset, and maximum offset for wheel and drag handling. Standalone horizontal and vertical bars are available
+through `TerraMenu.scrollBar`.
+
+## Reusable buttons
+
+Add `TerraButton` to a screen with the normal `addRenderableWidget(...)` method. Text, GUI sprite, item, and block
+factories all return a builder with bounds, theme, opacity, tooltip, and display options.
+
+```java
+addRenderableWidget(TerraButton.text(Component.literal("Save"), button -> save())
+        .bounds(left, top, 80, 20)
+        .build());
+
+addRenderableWidget(TerraButton.icon(Component.literal("Settings"), SETTINGS_SPRITE, 16, 16,
+        button -> openSettings()).pos(left, top + 24).build());
+
+addRenderableWidget(TerraButton.item(Blocks.GRASS_BLOCK, button -> selectGrass())
+        .pos(left + 24, top + 24)
+        .tooltip(Tooltip.create(Component.literal("Grass Block")))
+        .build());
+```
+
+Call `.showText(true)` after `icon(...)` or `item(...)` and give the button wider bounds to place its graphic beside
+the label. Item stacks can optionally render counts and durability with `.renderItemDecorations(true)`.
 
 ## Shared HUD panel
 
