@@ -6,7 +6,9 @@ Shared NeoForge 1.21.1 library for the Terra Minecraft mods.
 
 - `TerraGui`: texture-free machine panels, vanilla-style raised panels, recessed and instrument inset panels, slots and slot grids, accent plaques, status indicators, progress bars, perimeter progress, circles, pie charts, and badges.
 - `TerraUiTheme`: reusable ARGB palettes with built-in `MACHINE` and `VANILLA` themes.
-- `ProgressChartHud` and `HudAnchor`: reusable progress/chart HUD layout and positioning.
+- `SharedHudPanel`: a single bottom-right HUD panel with ordered, independently visible contributions from multiple mods.
+- `HudPanelConfig` and `HudPanelPlacement`: standard enabled, scale, position, and anchor controls for TerraLib HUD panels.
+- `ProgressChartHud` and `HudAnchor`: reusable progress/chart HUD layout and positioning. Progress charts can also be embedded in the shared panel.
 - `TerraColors`: strict `#RRGGBB` parsing/formatting and alpha composition.
 - `TerraFormats`: locale-stable scaled numbers, tick durations, and human-readable identifiers.
 
@@ -55,3 +57,59 @@ TerraGui.progressBar(graphics, x, y, 132, 8, progress, 10);
 ```
 
 All render methods use GUI coordinates and accept a custom `TerraUiTheme` where styling needs to differ.
+
+## Shared HUD panel
+
+Register contributions once from each mod's client initializer. Each contribution chooses a preferred end of the
+vertical stack and a priority. Top-preferring entries pack downward, bottom-preferring entries pack upward, and higher
+priorities sit closest to the requested end. Equal priorities are resolved by contribution ID. Return `null` from the
+supplier whenever that mod has nothing to display.
+
+```java
+SharedHudPanel.register(
+        ResourceLocation.fromNamespaceAndPath("terraskills", "skill_progress"),
+        SharedHudPanel.PreferredEnd.BOTTOM,
+        100,
+        () -> hudEnabled ? ProgressChartHud.sharedElement(currentProgress()) : null);
+
+SharedHudPanel.register(
+        ResourceLocation.fromNamespaceAndPath("terrafactions", "territory"),
+        SharedHudPanel.PreferredEnd.TOP,
+        200,
+        () -> territoryVisible ? new SharedHudPanel.Element(120, 20,
+                (graphics, delta, x, y) -> renderTerritory(graphics, x, y)) : null);
+```
+
+TerraLib owns the GUI layer and outer panel. Contributing mods should not register another GUI layer or draw another
+panel background for this content.
+
+## Standard HUD configuration
+
+`HudPanelConfig` adds the same five client settings used by TerraSkills: `enabled`, `scale` (0.25-4),
+`horizontalPercent` (0-100), `verticalPercent` (0-100), and `anchor`. Define it as part of the consuming mod's client
+config spec, then register that spec normally with NeoForge.
+
+```java
+public final class TerraSkillsClientConfig {
+    private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+
+    public static final HudPanelConfig SKILL_POINT_HUD = HudPanelConfig.define(
+            BUILDER, "skillPointHud", "terraskills.configuration");
+    public static final ModConfigSpec SPEC = BUILDER.build();
+}
+```
+
+The translation prefix above uses these keys: `hudEnabled`, `scale`, `horizontalPercent`, `verticalPercent`, and
+`anchor`. The standard defaults are enabled, scale `1`, position `98%, 98%`, and `BOTTOM_RIGHT`. Mods can pass a
+`HudPanelConfig.Defaults` instance to the four-argument `define` overload when another starting layout is needed.
+
+For a standalone progress panel, the config converts directly to its placement:
+
+```java
+if (TerraSkillsClientConfig.SKILL_POINT_HUD.enabled()) {
+    ProgressChartHud.render(graphics, content, TerraSkillsClientConfig.SKILL_POINT_HUD.placement());
+}
+```
+
+For shared-panel content, use `enabled()` in the contribution supplier. Position and scale configure standalone panels;
+the shared stack has one common position so individual contributions cannot move it independently.

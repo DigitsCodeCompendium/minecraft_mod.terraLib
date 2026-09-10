@@ -16,7 +16,7 @@ public final class ProgressChartHud {
     private ProgressChartHud() {
     }
 
-    public static void render(GuiGraphics graphics, Content content, Placement placement) {
+    public static void render(GuiGraphics graphics, Content content, HudPanelPlacement placement) {
         Objects.requireNonNull(graphics, "graphics");
         Objects.requireNonNull(content, "content");
         Objects.requireNonNull(placement, "placement");
@@ -32,25 +32,45 @@ public final class ProgressChartHud {
                 (float) (-HEIGHT * placement.anchor().vertical()), 0.0F);
 
         TerraGui.raisedPanel(graphics, 0, 0, WIDTH, HEIGHT, TerraUiTheme.VANILLA);
-        TerraGui.insetPanel(graphics, 4, 2, 36, 35, 0xFF111111, 0xFF8B8B8B, 0xFF2B2B2B);
-        renderChart(graphics, content);
-        graphics.drawString(minecraft.font, content.title(), CONTENT_X, 5, TerraUiTheme.VANILLA.text(), true);
-        double progress = Math.clamp(content.progress(), 0.0D, 1.0D);
-        int barWidth = WIDTH - CONTENT_X - 6;
-        TerraGui.progressBar(graphics, CONTENT_X, 17, barWidth, 8, progress, 10, TerraUiTheme.VANILLA);
-        String percentage = String.format(Locale.ROOT, "%.1f%%", progress * 100.0D);
-        graphics.drawString(minecraft.font, percentage, WIDTH - 6 - minecraft.font.width(percentage), 5,
-                TerraUiTheme.VANILLA.text(), true);
-        graphics.drawString(minecraft.font, content.statusLabel(), CONTENT_X, 28,
-                TerraUiTheme.VANILLA.mutedText(), true);
-        graphics.drawString(minecraft.font, content.statusValue(),
-                WIDTH - 6 - minecraft.font.width(content.statusValue()), 28, TerraUiTheme.VANILLA.text(), true);
+        renderContents(graphics, content, 0, 0);
         graphics.pose().popPose();
     }
 
-    private static void renderChart(GuiGraphics graphics, Content content) {
-        int centerX = 22;
-        int centerY = 19;
+    /** Retained for source compatibility; new panel code should use {@link HudPanelPlacement}. */
+    public static void render(GuiGraphics graphics, Content content, Placement placement) {
+        Objects.requireNonNull(placement, "placement");
+        render(graphics, content, placement.asHudPanelPlacement());
+    }
+
+    /** Adapts this HUD's contents for registration in {@link SharedHudPanel}. */
+    public static SharedHudPanel.Element sharedElement(Content content) {
+        Objects.requireNonNull(content, "content");
+        return new SharedHudPanel.Element(WIDTH, HEIGHT,
+                (graphics, deltaTracker, x, y) -> renderContents(graphics, content, x, y));
+    }
+
+    private static void renderContents(GuiGraphics graphics, Content content, int x, int y) {
+        Minecraft minecraft = Minecraft.getInstance();
+        TerraGui.insetPanel(graphics, x + 4, y + 2, 36, 35, 0xFF111111, 0xFF8B8B8B, 0xFF2B2B2B);
+        renderChart(graphics, content, x, y);
+        graphics.drawString(minecraft.font, content.title(), x + CONTENT_X, y + 5,
+                TerraUiTheme.VANILLA.text(), true);
+        double progress = Math.clamp(content.progress(), 0.0D, 1.0D);
+        int barWidth = WIDTH - CONTENT_X - 6;
+        TerraGui.progressBar(graphics, x + CONTENT_X, y + 17, barWidth, 8, progress, 10, TerraUiTheme.VANILLA);
+        String percentage = String.format(Locale.ROOT, "%.1f%%", progress * 100.0D);
+        graphics.drawString(minecraft.font, percentage, x + WIDTH - 6 - minecraft.font.width(percentage), y + 5,
+                TerraUiTheme.VANILLA.text(), true);
+        graphics.drawString(minecraft.font, content.statusLabel(), x + CONTENT_X, y + 28,
+                TerraUiTheme.VANILLA.mutedText(), true);
+        graphics.drawString(minecraft.font, content.statusValue(),
+                x + WIDTH - 6 - minecraft.font.width(content.statusValue()), y + 28,
+                TerraUiTheme.VANILLA.text(), true);
+    }
+
+    private static void renderChart(GuiGraphics graphics, Content content, int x, int y) {
+        int centerX = x + 22;
+        int centerY = y + 19;
         int maximumRadius = 14;
         TerraGui.circle(graphics, centerX, centerY, maximumRadius + 1, 0xFF000000);
         TerraGui.circle(graphics, centerX, centerY, maximumRadius, 0xFF181818);
@@ -82,6 +102,8 @@ public final class ProgressChartHud {
         }
     }
 
+    /** @deprecated Use the panel-agnostic {@link HudPanelPlacement}. */
+    @Deprecated(forRemoval = false)
     public record Placement(double scale, double horizontalPercent, double verticalPercent, HudAnchor anchor) {
         public Placement {
             if (!Double.isFinite(scale) || scale <= 0.0D) {
@@ -91,6 +113,10 @@ public final class ProgressChartHud {
                 throw new IllegalArgumentException("HUD position must be finite");
             }
             Objects.requireNonNull(anchor, "anchor");
+        }
+
+        public HudPanelPlacement asHudPanelPlacement() {
+            return new HudPanelPlacement(scale, horizontalPercent, verticalPercent, anchor);
         }
     }
 }
