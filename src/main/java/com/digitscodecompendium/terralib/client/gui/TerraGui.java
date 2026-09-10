@@ -3,12 +3,16 @@ package com.digitscodecompendium.terralib.client.gui;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ItemLike;
 
 import java.util.Objects;
 
 /** Stateless, texture-free rendering primitives shared by Terra screens and HUDs. */
 public final class TerraGui {
     public static final int SLOT_SIZE = 18;
+    public static final int PIP_SIZE = 9;
 
     private TerraGui() {
     }
@@ -102,6 +106,50 @@ public final class TerraGui {
         graphics.fill(x + 2, y + 2, x + width - 2, y + height - 2, withOpacity(interior, opacity));
     }
 
+    /** Draws a recessed display panel with a centered GUI sprite. */
+    public static void imagePanel(GuiGraphics graphics, int x, int y, int width, int height,
+                                  ResourceLocation sprite, int imageWidth, int imageHeight,
+                                  TerraUiTheme theme, double opacity) {
+        requireSize(width, height);
+        requireSize(imageWidth, imageHeight);
+        Objects.requireNonNull(sprite, "sprite");
+        recessedPanel(graphics, x, y, width, height, theme, opacity);
+        graphics.blitSprite(sprite, x + (width - imageWidth) / 2, y + (height - imageHeight) / 2,
+                imageWidth, imageHeight);
+    }
+
+    public static void imagePanel(GuiGraphics graphics, int x, int y, int width, int height,
+                                  ResourceLocation sprite, int imageWidth, int imageHeight) {
+        imagePanel(graphics, x, y, width, height, sprite, imageWidth, imageHeight,
+                TerraUiTheme.VANILLA, 1.0D);
+    }
+
+    /** Draws a recessed display panel with a centered item stack. Blocks are rendered through their item form. */
+    public static void itemPanel(GuiGraphics graphics, Font font, int x, int y, int width, int height,
+                                 ItemStack stack, boolean decorations, TerraUiTheme theme, double opacity) {
+        requireSize(width, height);
+        Objects.requireNonNull(font, "font");
+        Objects.requireNonNull(stack, "stack");
+        recessedPanel(graphics, x, y, width, height, theme, opacity);
+        int itemX = x + (width - 16) / 2;
+        int itemY = y + (height - 16) / 2;
+        graphics.renderItem(stack, itemX, itemY);
+        if (decorations) {
+            graphics.renderItemDecorations(font, stack, itemX, itemY);
+        }
+    }
+
+    public static void itemPanel(GuiGraphics graphics, Font font, int x, int y, int width, int height,
+                                 ItemStack stack) {
+        itemPanel(graphics, font, x, y, width, height, stack, false, TerraUiTheme.VANILLA, 1.0D);
+    }
+
+    public static void itemPanel(GuiGraphics graphics, Font font, int x, int y, int width, int height,
+                                 ItemLike item) {
+        itemPanel(graphics, font, x, y, width, height,
+                new ItemStack(Objects.requireNonNull(item, "item")));
+    }
+
     public static void slot(GuiGraphics graphics, int x, int y) {
         slot(graphics, x, y, TerraUiTheme.MACHINE);
     }
@@ -158,6 +206,28 @@ public final class TerraGui {
         graphics.fill(x, y, x + 10, y + 10, theme.outline());
         graphics.fill(x + 2, y + 2, x + 8, y + 8, color);
         graphics.fill(x + 3, y + 3, x + 6, y + 4, lighten(color, 0.35F));
+    }
+
+    /** Draws a compact on/off status pip using the theme's positive and negative colors. */
+    public static void booleanPip(GuiGraphics graphics, int x, int y, boolean on, TerraUiTheme theme) {
+        Objects.requireNonNull(theme, "theme");
+        colorPip(graphics, x, y, on ? theme.positive() : theme.negative(), theme);
+    }
+
+    public static void booleanPip(GuiGraphics graphics, int x, int y, boolean on) {
+        booleanPip(graphics, x, y, on, TerraUiTheme.VANILLA);
+    }
+
+    /** Draws a compact status pip with an arbitrary ARGB center color. */
+    public static void colorPip(GuiGraphics graphics, int x, int y, int color, TerraUiTheme theme) {
+        Objects.requireNonNull(theme, "theme");
+        circle(graphics, x + PIP_SIZE / 2, y + PIP_SIZE / 2, PIP_SIZE / 2, theme.outline());
+        circle(graphics, x + PIP_SIZE / 2, y + PIP_SIZE / 2, PIP_SIZE / 2 - 2, color);
+        graphics.fill(x + 3, y + 2, x + 5, y + 3, lighten(color, 0.35F));
+    }
+
+    public static void colorPip(GuiGraphics graphics, int x, int y, int color) {
+        colorPip(graphics, x, y, color, TerraUiTheme.VANILLA);
     }
 
     /** Draws a three-tone horizontal progress bar, optionally divided into equal visual segments. */

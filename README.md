@@ -4,9 +4,10 @@ Shared NeoForge 1.21.1 library for the Terra Minecraft mods.
 
 ## Included APIs
 
-- `TerraGui`: texture-free machine panels, vanilla-style raised panels, recessed and instrument inset panels, slots and slot grids, accent plaques, status indicators, progress bars, perimeter progress, circles, pie charts, and badges.
+- `TerraGui`: texture-free panels, image/item/block displays, slots, boolean and custom-color pips, indicators, progress bars, charts, and badges.
 - `TerraMenu`: tabbed panels with tabs on any side, tab hit-testing, scroll panels, and vertical or horizontal scrollbars.
 - `TerraButton`: themed, narratable buttons using text, GUI sprite icons, items, blocks, or mixed text-and-graphic content.
+- `TerraDropdown` and `TerraTextField`: themed selectors and text entry with standard mouse, keyboard, tooltip, focus, and narration behavior.
 - `TerraUiTheme`: reusable ARGB palettes with built-in `MACHINE` and `VANILLA` themes.
 - `SharedHudPanel`: a single bottom-right HUD panel with ordered, independently visible contributions from multiple mods.
 - `HudPanelConfig` and `HudPanelPlacement`: standard enabled, scale, position, and anchor controls for TerraLib HUD panels.
@@ -103,6 +104,51 @@ addRenderableWidget(TerraButton.item(Blocks.GRASS_BLOCK, button -> selectGrass()
 
 Call `.showText(true)` after `icon(...)` or `item(...)` and give the button wider bounds to place its graphic beside
 the label. Item stacks can optionally render counts and durability with `.renderItemDecorations(true)`.
+
+Any button can also hold a boolean selected state. Toggle callbacks receive the new value, and narration reports the
+current on/off state.
+
+```java
+addRenderableWidget(TerraButton.toggle(Component.literal("Auto mode"), autoMode,
+        (button, selected) -> setAutoMode(selected)).bounds(left, top, 90, 20).build());
+
+addRenderableWidget(TerraButton.item(Blocks.CHEST, button -> { })
+        .toggle(storageEnabled, (button, selected) -> setStorageEnabled(selected))
+        .pos(left + 94, top).build());
+```
+
+## Displays, pips, selectors, and text entry
+
+Image and item display panels are non-interactive drawing primitives. Passing any `ItemLike` supports both items and
+blocks. Boolean pips use the theme's positive/negative colors; color pips accept any ARGB value.
+
+```java
+TerraGui.imagePanel(graphics, x, y, 32, 32, PORTRAIT_SPRITE, 24, 24);
+TerraGui.itemPanel(graphics, font, x + 36, y, 24, 24, Blocks.DIAMOND_BLOCK);
+TerraGui.booleanPip(graphics, x, y + 36, machineRunning, TerraUiTheme.MACHINE);
+TerraGui.colorPip(graphics, x + 12, y + 36, factionColor, TerraUiTheme.VANILLA);
+```
+
+Dropdowns accept arbitrary value types and a function that turns each value into display text. They open downward by
+default and can be configured to open upward.
+
+```java
+TerraDropdown<Mode> mode = TerraDropdown.builder(
+        Component.literal("Mode"), List.of(Mode.values()), currentMode,
+        (dropdown, selected) -> setMode(selected))
+        .optionLabel(value -> Component.translatable(value.translationKey()))
+        .bounds(left, top, 110, 20)
+        .build();
+addRenderableWidget(mode);
+
+TerraTextField name = TerraTextField.builder(font, Component.literal("Name"))
+        .bounds(left, top + 24, 110, 20)
+        .hint(Component.literal("Enter a name"))
+        .maxLength(32)
+        .responder(this::setName)
+        .build();
+addRenderableWidget(name);
+```
 
 ## Shared HUD panel
 

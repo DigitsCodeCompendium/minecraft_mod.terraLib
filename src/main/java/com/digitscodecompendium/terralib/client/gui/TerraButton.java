@@ -6,7 +6,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
@@ -28,6 +30,10 @@ public final class TerraButton extends AbstractButton {
     private final double opacity;
     private final boolean showText;
     private final boolean renderItemDecorations;
+    private final boolean toggleable;
+    @Nullable
+    private final OnToggle onToggle;
+    private boolean selected;
     @Nullable
     private final ResourceLocation sprite;
     private final int spriteWidth;
@@ -41,6 +47,9 @@ public final class TerraButton extends AbstractButton {
         this.opacity = builder.opacity;
         this.showText = builder.showText;
         this.renderItemDecorations = builder.renderItemDecorations;
+        this.toggleable = builder.toggleable;
+        this.selected = builder.selected;
+        this.onToggle = builder.onToggle;
         this.sprite = builder.sprite;
         this.spriteWidth = builder.spriteWidth;
         this.spriteHeight = builder.spriteHeight;
@@ -50,6 +59,11 @@ public final class TerraButton extends AbstractButton {
 
     public static Builder text(Component text, OnPress onPress) {
         return new Builder(text, onPress);
+    }
+
+    /** Creates a stateful text button that flips its selected value whenever it is pressed. */
+    public static Builder toggle(Component text, boolean selected, OnToggle onToggle) {
+        return new Builder(text, button -> { }).toggle(selected, onToggle);
     }
 
     /** Creates an icon-only button. The label is still used for narration. */
@@ -72,14 +86,29 @@ public final class TerraButton extends AbstractButton {
 
     @Override
     public void onPress() {
+        if (toggleable) {
+            selected = !selected;
+            Objects.requireNonNull(onToggle, "onToggle").onToggle(this, selected);
+        }
         onPress.onPress(this);
+    }
+
+    public boolean selected() {
+        return selected;
+    }
+
+    public void setSelected(boolean selected) {
+        if (!toggleable) {
+            throw new IllegalStateException("Cannot set selected state on a non-toggleable button");
+        }
+        this.selected = selected;
     }
 
     @Override
     protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         Minecraft minecraft = Minecraft.getInstance();
         double backgroundOpacity = opacity * alpha * (active ? 1.0D : 0.55D);
-        if (active) {
+        if (active && !selected) {
             TerraGui.raisedPanel(graphics, getX(), getY(), getWidth(), getHeight(), theme, backgroundOpacity);
         } else {
             TerraGui.recessedPanel(graphics, getX(), getY(), getWidth(), getHeight(), theme, backgroundOpacity);
@@ -122,6 +151,13 @@ public final class TerraButton extends AbstractButton {
     }
 
     @Override
+    protected MutableComponent createNarrationMessage() {
+        return toggleable
+                ? CommonComponents.optionNameValue(getMessage(), CommonComponents.optionStatus(selected))
+                : super.createNarrationMessage();
+    }
+
+    @Override
     protected void updateWidgetNarration(NarrationElementOutput output) {
         defaultButtonNarrationText(output);
     }
@@ -129,6 +165,11 @@ public final class TerraButton extends AbstractButton {
     @FunctionalInterface
     public interface OnPress {
         void onPress(TerraButton button);
+    }
+
+    @FunctionalInterface
+    public interface OnToggle {
+        void onToggle(TerraButton button, boolean selected);
     }
 
     public static final class Builder {
@@ -142,6 +183,10 @@ public final class TerraButton extends AbstractButton {
         private double opacity = 1.0D;
         private boolean showText = true;
         private boolean renderItemDecorations;
+        private boolean toggleable;
+        private boolean selected;
+        @Nullable
+        private OnToggle onToggle;
         @Nullable
         private ResourceLocation sprite;
         private int spriteWidth;
@@ -215,6 +260,14 @@ public final class TerraButton extends AbstractButton {
 
         public Builder renderItemDecorations(boolean renderItemDecorations) {
             this.renderItemDecorations = renderItemDecorations;
+            return this;
+        }
+
+        /** Makes this text, icon, item, or block button stateful. */
+        public Builder toggle(boolean selected, OnToggle onToggle) {
+            this.toggleable = true;
+            this.selected = selected;
+            this.onToggle = Objects.requireNonNull(onToggle, "onToggle");
             return this;
         }
 
