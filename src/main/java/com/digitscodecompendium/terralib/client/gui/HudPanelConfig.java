@@ -11,19 +11,23 @@ import java.util.Objects;
  * and registering that client config spec.</p>
  */
 public final class HudPanelConfig {
-    public static final Defaults DEFAULTS = new Defaults(true, 1.0D, 98.0D, 98.0D, HudAnchor.BOTTOM_RIGHT);
+    public static final Defaults DEFAULTS =
+            new Defaults(true, 1.0D, 1.0D, 98.0D, 98.0D, HudAnchor.BOTTOM_RIGHT);
 
     private final ModConfigSpec.BooleanValue enabled;
     private final ModConfigSpec.DoubleValue scale;
+    private final ModConfigSpec.DoubleValue opacity;
     private final ModConfigSpec.DoubleValue horizontalPercent;
     private final ModConfigSpec.DoubleValue verticalPercent;
     private final ModConfigSpec.EnumValue<HudAnchor> anchor;
 
     private HudPanelConfig(ModConfigSpec.BooleanValue enabled, ModConfigSpec.DoubleValue scale,
+                           ModConfigSpec.DoubleValue opacity,
                            ModConfigSpec.DoubleValue horizontalPercent, ModConfigSpec.DoubleValue verticalPercent,
                            ModConfigSpec.EnumValue<HudAnchor> anchor) {
         this.enabled = enabled;
         this.scale = scale;
+        this.opacity = opacity;
         this.horizontalPercent = horizontalPercent;
         this.verticalPercent = verticalPercent;
         this.anchor = anchor;
@@ -46,6 +50,7 @@ public final class HudPanelConfig {
         builder.push(category);
         ModConfigSpec.BooleanValue enabled;
         ModConfigSpec.DoubleValue scale;
+        ModConfigSpec.DoubleValue opacity;
         ModConfigSpec.DoubleValue horizontalPercent;
         ModConfigSpec.DoubleValue verticalPercent;
         ModConfigSpec.EnumValue<HudAnchor> anchor;
@@ -56,6 +61,9 @@ public final class HudPanelConfig {
             scale = builder.comment("HUD scale. 1 is normal size.")
                     .translation(translationPrefix + ".scale")
                     .defineInRange("scale", defaults.scale(), 0.25D, 4.0D);
+            opacity = builder.comment("Panel background opacity. 0 is transparent and 1 is opaque.")
+                    .translation(translationPrefix + ".opacity")
+                    .defineInRange("opacity", defaults.opacity(), 0.0D, 1.0D);
             horizontalPercent = builder.comment("Horizontal position as a percentage of screen width.")
                     .translation(translationPrefix + ".horizontalPercent")
                     .defineInRange("horizontalPercent", defaults.horizontalPercent(), 0.0D, 100.0D);
@@ -68,7 +76,7 @@ public final class HudPanelConfig {
         } finally {
             builder.pop();
         }
-        return new HudPanelConfig(enabled, scale, horizontalPercent, verticalPercent, anchor);
+        return new HudPanelConfig(enabled, scale, opacity, horizontalPercent, verticalPercent, anchor);
     }
 
     public boolean enabled() {
@@ -77,6 +85,10 @@ public final class HudPanelConfig {
 
     public double scale() {
         return scale.get();
+    }
+
+    public double opacity() {
+        return opacity.get();
     }
 
     public double horizontalPercent() {
@@ -103,12 +115,15 @@ public final class HudPanelConfig {
         }
     }
 
-    /** Default values for a panel; the supported ranges remain scale 0.25-4 and position 0-100 percent. */
-    public record Defaults(boolean enabled, double scale, double horizontalPercent, double verticalPercent,
-                           HudAnchor anchor) {
+    /** Default values for a panel, including background opacity from zero to one. */
+    public record Defaults(boolean enabled, double scale, double opacity, double horizontalPercent,
+                           double verticalPercent, HudAnchor anchor) {
         public Defaults {
             if (!Double.isFinite(scale) || scale < 0.25D || scale > 4.0D) {
                 throw new IllegalArgumentException("Default HUD scale must be between 0.25 and 4");
+            }
+            if (!Double.isFinite(opacity) || opacity < 0.0D || opacity > 1.0D) {
+                throw new IllegalArgumentException("Default panel opacity must be between 0 and 1");
             }
             if (!Double.isFinite(horizontalPercent) || horizontalPercent < 0.0D || horizontalPercent > 100.0D
                     || !Double.isFinite(verticalPercent) || verticalPercent < 0.0D || verticalPercent > 100.0D) {

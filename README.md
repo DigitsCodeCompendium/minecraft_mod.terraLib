@@ -85,9 +85,10 @@ panel background for this content.
 
 ## Standard HUD configuration
 
-`HudPanelConfig` adds the same five client settings used by TerraSkills: `enabled`, `scale` (0.25-4),
-`horizontalPercent` (0-100), `verticalPercent` (0-100), and `anchor`. Define it as part of the consuming mod's client
-config spec, then register that spec normally with NeoForge.
+`HudPanelConfig` adds standard `enabled`, `scale` (0.25-4), `opacity` (0-1), `horizontalPercent` (0-100),
+`verticalPercent` (0-100), and `anchor` settings. Opacity affects the panel background and frame while leaving its text
+and indicators readable. Define the template as part of the consuming mod's client config spec, then register that spec
+normally with NeoForge.
 
 ```java
 public final class TerraSkillsClientConfig {
@@ -99,17 +100,29 @@ public final class TerraSkillsClientConfig {
 }
 ```
 
-The translation prefix above uses these keys: `hudEnabled`, `scale`, `horizontalPercent`, `verticalPercent`, and
-`anchor`. The standard defaults are enabled, scale `1`, position `98%, 98%`, and `BOTTOM_RIGHT`. Mods can pass a
-`HudPanelConfig.Defaults` instance to the four-argument `define` overload when another starting layout is needed.
+Register that spec from the consuming mod's main entry point:
+
+```java
+container.registerConfig(ModConfig.Type.CLIENT, TerraSkillsClientConfig.SPEC);
+```
+
+To make it editable from that mod's entry in NeoForge's Mods list, register the standard screen from its client entry
+point as well:
+
+```java
+container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+```
+
+The translation prefix above uses these keys: `hudEnabled`, `scale`, `opacity`, `horizontalPercent`,
+`verticalPercent`, and `anchor`. The standard defaults are enabled, scale `1`, opacity `1`, position `98%, 98%`, and
+`BOTTOM_RIGHT`. Mods can pass a `HudPanelConfig.Defaults` instance to the four-argument `define` overload when another
+starting layout is needed.
 
 For a standalone progress panel, the config converts directly to its placement:
 
 ```java
-if (TerraSkillsClientConfig.SKILL_POINT_HUD.enabled()) {
-    ProgressChartHud.render(graphics, content, TerraSkillsClientConfig.SKILL_POINT_HUD.placement());
-}
+ProgressChartHud.render(graphics, content, TerraSkillsClientConfig.SKILL_POINT_HUD);
 ```
 
-For shared-panel content, use `enabled()` in the contribution supplier. Position and scale configure standalone panels;
-the shared stack has one common position so individual contributions cannot move it independently.
+For shared-panel content, use a consuming mod's `HudPanelConfig.enabled()` value in its contribution supplier. Position
+and scale apply to standalone panels; individual contributions cannot independently move or scale the shared stack.

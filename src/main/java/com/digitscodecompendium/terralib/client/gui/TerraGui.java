@@ -20,20 +20,26 @@ public final class TerraGui {
 
     public static void machinePanel(GuiGraphics graphics, int x, int y, int width, int height,
                                     TerraUiTheme theme) {
+        machinePanel(graphics, x, y, width, height, theme, 1.0D);
+    }
+
+    public static void machinePanel(GuiGraphics graphics, int x, int y, int width, int height,
+                                    TerraUiTheme theme, double opacity) {
         requireSize(width, height);
         Objects.requireNonNull(theme, "theme");
-        graphics.fill(x, y, x + width, y + height, theme.outline());
-        graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, theme.frameDark());
-        graphics.fill(x + 3, y + 3, x + width - 3, y + height - 3, theme.surfaceDark());
+        graphics.fill(x, y, x + width, y + height, withOpacity(theme.outline(), opacity));
+        graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, withOpacity(theme.frameDark(), opacity));
+        graphics.fill(x + 3, y + 3, x + width - 3, y + height - 3, withOpacity(theme.surfaceDark(), opacity));
         if (height >= 24) {
-            graphics.fill(x + 5, y + 5, x + width - 5, y + 22, theme.frameDark());
-            graphics.fill(x + 6, y + 6, x + width - 6, y + 7, theme.frameHighlight());
+            graphics.fill(x + 5, y + 5, x + width - 5, y + 22, withOpacity(theme.frameDark(), opacity));
+            graphics.fill(x + 6, y + 6, x + width - 6, y + 7, withOpacity(theme.frameHighlight(), opacity));
         }
         if (width >= 14 && height >= 14) {
-            rivet(graphics, x + 8, y + 8, theme.frameHighlight());
-            rivet(graphics, x + width - 11, y + 8, theme.frameHighlight());
-            rivet(graphics, x + 8, y + height - 11, theme.frameHighlight());
-            rivet(graphics, x + width - 11, y + height - 11, theme.frameHighlight());
+            int rivetColor = withOpacity(theme.frameHighlight(), opacity);
+            rivet(graphics, x + 8, y + 8, rivetColor);
+            rivet(graphics, x + width - 11, y + 8, rivetColor);
+            rivet(graphics, x + 8, y + height - 11, rivetColor);
+            rivet(graphics, x + width - 11, y + height - 11, rivetColor);
         }
     }
 
@@ -44,14 +50,19 @@ public final class TerraGui {
 
     public static void raisedPanel(GuiGraphics graphics, int x, int y, int width, int height,
                                    TerraUiTheme theme) {
+        raisedPanel(graphics, x, y, width, height, theme, 1.0D);
+    }
+
+    public static void raisedPanel(GuiGraphics graphics, int x, int y, int width, int height,
+                                   TerraUiTheme theme, double opacity) {
         requireSize(width, height);
         Objects.requireNonNull(theme, "theme");
-        graphics.fill(x, y, x + width, y + height, theme.outline());
-        graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, theme.frameDark());
-        graphics.fill(x + 1, y + 1, x + width - 2, y + 2, theme.frameHighlight());
-        graphics.fill(x + 1, y + 1, x + 2, y + height - 2, theme.frameHighlight());
-        graphics.fill(x + 2, y + height - 2, x + width - 1, y + height - 1, theme.surface());
-        graphics.fill(x + width - 2, y + 2, x + width - 1, y + height - 1, theme.surface());
+        graphics.fill(x, y, x + width, y + height, withOpacity(theme.outline(), opacity));
+        graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, withOpacity(theme.frameDark(), opacity));
+        graphics.fill(x + 1, y + 1, x + width - 2, y + 2, withOpacity(theme.frameHighlight(), opacity));
+        graphics.fill(x + 1, y + 1, x + 2, y + height - 2, withOpacity(theme.frameHighlight(), opacity));
+        graphics.fill(x + 2, y + height - 2, x + width - 1, y + height - 1, withOpacity(theme.surface(), opacity));
+        graphics.fill(x + width - 2, y + 2, x + width - 1, y + height - 1, withOpacity(theme.surface(), opacity));
     }
 
     public static void recessedPanel(GuiGraphics graphics, int x, int y, int width, int height) {
@@ -60,24 +71,35 @@ public final class TerraGui {
 
     public static void recessedPanel(GuiGraphics graphics, int x, int y, int width, int height,
                                      TerraUiTheme theme) {
+        recessedPanel(graphics, x, y, width, height, theme, 1.0D);
+    }
+
+    public static void recessedPanel(GuiGraphics graphics, int x, int y, int width, int height,
+                                     TerraUiTheme theme, double opacity) {
         requireSize(width, height);
         Objects.requireNonNull(theme, "theme");
-        graphics.fill(x, y, x + width, y + height, theme.outline());
-        graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, theme.surfaceDark());
+        graphics.fill(x, y, x + width, y + height, withOpacity(theme.outline(), opacity));
+        graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, withOpacity(theme.surfaceDark(), opacity));
         if (height >= 4) {
-            graphics.fill(x + 2, y + 2, x + width - 2, y + 3, darken(theme.surfaceDark(), 0.65F));
+            graphics.fill(x + 2, y + 2, x + width - 2, y + 3,
+                    withOpacity(darken(theme.surfaceDark(), 0.65F), opacity));
         }
     }
 
     /** Draws a three-layer inset used for dials and other compact HUD instruments. */
     public static void insetPanel(GuiGraphics graphics, int x, int y, int width, int height,
                                   int outline, int rim, int interior) {
+        insetPanel(graphics, x, y, width, height, outline, rim, interior, 1.0D);
+    }
+
+    public static void insetPanel(GuiGraphics graphics, int x, int y, int width, int height,
+                                  int outline, int rim, int interior, double opacity) {
         requireSize(width, height);
-        graphics.fill(x, y, x + width, y + height, outline);
+        graphics.fill(x, y, x + width, y + height, withOpacity(outline, opacity));
         if (width <= 2 || height <= 2) return;
-        graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, rim);
+        graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, withOpacity(rim, opacity));
         if (width <= 4 || height <= 4) return;
-        graphics.fill(x + 2, y + 2, x + width - 2, y + height - 2, interior);
+        graphics.fill(x + 2, y + 2, x + width - 2, y + height - 2, withOpacity(interior, opacity));
     }
 
     public static void slot(GuiGraphics graphics, int x, int y) {
@@ -265,5 +287,13 @@ public final class TerraGui {
 
     private static int channel(int argb, int shift) {
         return argb >>> shift & 0xFF;
+    }
+
+    private static int withOpacity(int argb, double opacity) {
+        if (!Double.isFinite(opacity) || opacity < 0.0D || opacity > 1.0D) {
+            throw new IllegalArgumentException("Opacity must be between 0 and 1");
+        }
+        int alpha = (int) Math.round((argb >>> 24) * opacity);
+        return argb & 0x00FFFFFF | alpha << 24;
     }
 }

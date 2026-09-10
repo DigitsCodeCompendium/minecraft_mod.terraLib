@@ -16,13 +16,14 @@ public final class ProgressChartHud {
     private ProgressChartHud() {
     }
 
-    public static void render(GuiGraphics graphics, Content content, HudPanelPlacement placement) {
+    public static void render(GuiGraphics graphics, Content content, HudPanelConfig config) {
         Objects.requireNonNull(graphics, "graphics");
         Objects.requireNonNull(content, "content");
-        Objects.requireNonNull(placement, "placement");
+        Objects.requireNonNull(config, "config");
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.options.hideGui || minecraft.player == null) return;
+        if (minecraft.options.hideGui || minecraft.player == null || !config.enabled()) return;
 
+        HudPanelPlacement placement = config.placement();
         double screenX = graphics.guiWidth() * placement.horizontalPercent() / 100.0D;
         double screenY = graphics.guiHeight() * placement.verticalPercent() / 100.0D;
         graphics.pose().pushPose();
@@ -31,15 +32,9 @@ public final class ProgressChartHud {
         graphics.pose().translate((float) (-WIDTH * placement.anchor().horizontal()),
                 (float) (-HEIGHT * placement.anchor().vertical()), 0.0F);
 
-        TerraGui.raisedPanel(graphics, 0, 0, WIDTH, HEIGHT, TerraUiTheme.VANILLA);
+        TerraGui.raisedPanel(graphics, 0, 0, WIDTH, HEIGHT, TerraUiTheme.VANILLA, config.opacity());
         renderContents(graphics, content, 0, 0);
         graphics.pose().popPose();
-    }
-
-    /** Retained for source compatibility; new panel code should use {@link HudPanelPlacement}. */
-    public static void render(GuiGraphics graphics, Content content, Placement placement) {
-        Objects.requireNonNull(placement, "placement");
-        render(graphics, content, placement.asHudPanelPlacement());
     }
 
     /** Adapts this HUD's contents for registration in {@link SharedHudPanel}. */
@@ -102,21 +97,4 @@ public final class ProgressChartHud {
         }
     }
 
-    /** @deprecated Use the panel-agnostic {@link HudPanelPlacement}. */
-    @Deprecated(forRemoval = false)
-    public record Placement(double scale, double horizontalPercent, double verticalPercent, HudAnchor anchor) {
-        public Placement {
-            if (!Double.isFinite(scale) || scale <= 0.0D) {
-                throw new IllegalArgumentException("Scale must be finite and positive");
-            }
-            if (!Double.isFinite(horizontalPercent) || !Double.isFinite(verticalPercent)) {
-                throw new IllegalArgumentException("HUD position must be finite");
-            }
-            Objects.requireNonNull(anchor, "anchor");
-        }
-
-        public HudPanelPlacement asHudPanelPlacement() {
-            return new HudPanelPlacement(scale, horizontalPercent, verticalPercent, anchor);
-        }
-    }
 }
